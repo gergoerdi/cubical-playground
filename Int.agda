@@ -1,7 +1,7 @@
 {-# OPTIONS --cubical #-}
 module Int where
 
-open import Data.Nat renaming (_+_ to _ℕ+_)
+open import Data.Nat renaming (_+_ to _+̂_)
 open import Cubical.PathPrelude
 
 module PathPrelude′ {ℓ} {A : Set ℓ} where
@@ -13,7 +13,7 @@ open PathPrelude′
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
-  quot : ∀ {x y x′ y′} → (x ℕ+ y′) ≡ (x′ ℕ+ y) → (x - y) ≡ (x′ - y′)
+  quot : ∀ {x y x′ y′} → (x +̂ y′) ≡ (x′ +̂ y) → (x - y) ≡ (x′ - y′)
 
 module UnaryPatMatch where
   _+1 : ℤ → ℤ
@@ -44,93 +44,32 @@ fromPropEq prefl = refl
 
 open import Function using (_⟨_⟩_; _$_)
 
-reorder :  ∀ x y a b → (x ℕ+ a) ℕ+ (y ℕ+ b) ≡ (x ℕ+ y) ℕ+ (a ℕ+ b)
+reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)
 reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) prefl x y a b
 
-inner-lemma : ∀ x y {a b a′ b′} → a ℕ+ b′ ≡ a′ ℕ+ b → (x ℕ+ a) ℕ+ (y ℕ+ b′) ≡ (x ℕ+ a′) ℕ+ (y ℕ+ b)
-inner-lemma x y {a} {b} {a′} {b′} prf =
-  reorder x y a b′
-    ⟨ trans ⟩
-  cong (x ℕ+ y ℕ+_) prf
-    ⟨ trans ⟩
-  sym (reorder x y a′ b)
+inner-lemma : ∀ x y {a b a′ b′} → a +̂ b′ ≡ a′ +̂ b → (x +̂ a) +̂ (y +̂ b′) ≡ (x +̂ a′) +̂ (y +̂ b)
+inner-lemma x y {a} {b} {a′} {b′} prf = begin
+  (x +̂ a) +̂ (y +̂ b′)   ≡⟨ reorder x y a b′ ⟩
+  (x +̂ y) +̂ (a +̂ b′)   ≡⟨ cong (x +̂ y +̂_) prf ⟩
+  (x +̂ y) +̂ (a′ +̂ b)   ≡⟨ sym (reorder x y a′ b) ⟩
+  (x +̂ a′) +̂ (y +̂ b)   ∎
 
-outer-lemma : ∀ {a b} x y {x′ y′} → x ℕ+ y′ ≡ x′ ℕ+ y → (x ℕ+ a) ℕ+ (y′ ℕ+ b) ≡ (x′ ℕ+ a) ℕ+ (y ℕ+ b)
-outer-lemma {a} {b} x y {x′} {y′} prf =
-  reorder x y′ a b
-    ⟨ trans ⟩
-  cong (_ℕ+ (a ℕ+ b)) prf
-    ⟨ trans ⟩
-  sym (reorder x′ y a b)
-
-_+_ : ℤ → ℤ → ℤ
-(x - y) + (a - b) = (x ℕ+ a) - (y ℕ+ b)
-(x - y) + quot {a} {b} {a′} {b′} q j = quot {x ℕ+ a} {y ℕ+ b} {x ℕ+ a′} {y ℕ+ b′}
-  (inner-lemma x y q) j
-quot {x} {y} {x′} {y′} p i + (a - b) = quot {x ℕ+ a} {y ℕ+ b} {x′ ℕ+ a} {y′ ℕ+ b} (outer-lemma x y p) i
-quot {x} {y} {x′} {y′} p i + quot {a} {b} {a′} {b′} q j = {!!}
-  where
-    p′ : (x ℕ+ a) - (y ℕ+ b) ≡ (x′ ℕ+ a) - (y′ ℕ+ b)
-    p′ = quot (outer-lemma x y p)
-
-    q′ : (x′ ℕ+ a) - (y′ ℕ+ b) ≡ (x′ ℕ+ a′) - (y′ ℕ+ b′)
-    q′ = quot (inner-lemma x′ y′ q)
-
-  -- transp (λ j → {!!}) {!!}
-    -- quot {x ℕ+ a} {y ℕ+ b} {x′ ℕ+ a′} {y′ ℕ+ b′}
-    --   {!!} {!!}
-
---     lem₂ : ∀ a b x y {x′ y′} → x ℕ+ y′ ≡ x′ ℕ+ y → (x ℕ+ a) ℕ+ (y′ ℕ+ b) ≡ (x′ ℕ+ a) ℕ+ (y ℕ+ b)
---     lem₂ a b x y {x′} {y′} prf =
---       reorder x y′ a b
---         ⟨ trans ⟩
---       cong (_ℕ+ (a ℕ+ b)) prf
---         ⟨ trans ⟩
---       sym (reorder x′ y a b)
-
-
--- foo : ℤ → ℤ → ℤ
--- -- foo (x - y) = ℤ-elim (λ a b → (x ℕ+ a) - (y ℕ+ b)) λ {a} {b} {a′} {b′} prf → quot (lem x y prf)
--- --   where
--- --     reorder :  ∀ x y a b → (x ℕ+ a) ℕ+ (y ℕ+ b) ≡ (x ℕ+ y) ℕ+ (a ℕ+ b)
--- --     reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) PropEq.refl x y a b
-
--- --     lem : ∀ x y {a b c d} → a ℕ+ b ≡ c ℕ+ d → (x ℕ+ a) ℕ+ (y ℕ+ b) ≡ (x ℕ+ c) ℕ+ (y ℕ+ d)
--- --     lem x y {a} {b} {c} {d} prf = reorder x y a b ⟨ trans ⟩ cong (x ℕ+ y ℕ+_) prf ⟨ trans ⟩ sym (reorder x y c d)
--- -- foo (quot {x} {y} {x′} {y′} prf i) = ℤ-elim (λ a b → {!!}) {!!}
-
--- foo (x - y) = λ
---   { (a - b) → (x ℕ+ a) - (y ℕ+ b)
---   ; (quot {a} {b} {a′} {b′} prf i) → quot {x ℕ+ a} {y ℕ+ b} {x ℕ+ a′} {y ℕ+ b′} (lem x y prf) i
---   }
---   where
---     lem : ∀ x y {a b a′ b′} → a ℕ+ b′ ≡ a′ ℕ+ b → (x ℕ+ a) ℕ+ (y ℕ+ b′) ≡ (x ℕ+ a′) ℕ+ (y ℕ+ b)
---     lem x y {a} {b} {a′} {b′} prf = reorder x y a b′ ⟨ trans ⟩ cong (x ℕ+ y ℕ+_) prf ⟨ trans ⟩ sym (reorder x y a′ b)
--- foo (quot {x} {y} {x′} {y′} prf i) = λ
---   { (a - b) → ?
---   ; (quot {a} {b} {a′} {b′} prf i) → ?
---   }
+outer-lemma : ∀ {a b} x y {x′ y′} → x +̂ y′ ≡ x′ +̂ y → (x +̂ a) +̂ (y′ +̂ b) ≡ (x′ +̂ a) +̂ (y +̂ b)
+outer-lemma {a} {b} x y {x′} {y′} prf = begin
+  (x +̂ a) +̂ (y′ +̂ b)   ≡⟨ reorder x y′ a b ⟩
+  (x +̂ y′) +̂ (a +̂ b)   ≡⟨ cong (_+̂ (a +̂ b)) prf ⟩
+  (x′ +̂ y) +̂ (a +̂ b)   ≡⟨ sym (reorder x′ y a b) ⟩
+  (x′ +̂ a) +̂ (y +̂ b)   ∎
 
 -- _+_ : ℤ → ℤ → ℤ
--- _+_ = ℤ-elim
---   (λ x y → ℤ-elim
---     (λ a b → (x ℕ+ a) - (y ℕ+ b))
---     (λ {a} {b} {a′} {b′} prf → quot (inner-lemma x y prf)))
---   --λ {x} {y} prf → λ i → cong₂
---   --                   (λ ξ χ →
---   --                      ℤ-elim (λ a b → (ξ ℕ+ a) - (y ℕ+ χ))
---   --                      (λ {a} {b} {a′} {b′} prf′ → quot (lem₁ ξ χ prf′)))
---   --                   {!!} {!!} i {!!}
---   -- λ {x} {y} {x′} {y′} prf →
---   --   cong
---   --     {x = λ a b → (x ℕ+ a) - (y ℕ+ b)}
---   --     {y = λ a b → (x′ ℕ+ a) - (y′ ℕ+ b)}
---   --     (λ f → ℤ-elim (λ a b → f a b) (λ {a} {b} {a′} {b′} prf′ → quot (lem₁ x y prf′)))
---   --     (foo {x} {y} {x′} {y′} prf)
---   --     ⟨ trans ⟩
---   --   {!!}
---   --   -- cong₂ {x = λ x y a b → (x ℕ+ a) - (y ℕ+ b)} {y = λ x′ y′ a b → (x′ ℕ+ a) - (y′ ℕ+ b)} (λ f g → ℤ-elim (f x y) (λ prf′ → quot (g prf′))) (foo prf)  {!!})
---   {!!}
+-- (x - y) + (a - b) = (x +̂ a) - (y +̂ b)
+-- (x - y) + quot {a} {b} {a′} {b′} q j = quot {x +̂ a} {y +̂ b} {x +̂ a′} {y +̂ b′}
+--   (inner-lemma x y q) j
+-- quot {x} {y} {x′} {y′} p i + (a - b) = quot {x +̂ a} {y +̂ b} {x′ +̂ a} {y′ +̂ b} (outer-lemma x y p) i
+-- quot {x} {y} {x′} {y′} p i + quot {a} {b} {a′} {b′} q j = {!!}
 --   where
---     foo : ∀ {x y x′ y′} → x ℕ+ y′ ≡ x′ ℕ+ y → (λ (a : ℕ) (b : ℕ) → (x ℕ+ a) - (y ℕ+ b)) ≡ (λ a b → (x′ ℕ+ a) - (y′ ℕ+ b))
---     foo {x} {y} {x′} {y′} prf = funExt λ a → funExt λ b → quot (outer-lemma x y prf)
+--     p′ : (x +̂ a) - (y +̂ b) ≡ (x′ +̂ a) - (y′ +̂ b)
+--     p′ = quot (outer-lemma x y p)
+
+--     q′ : (x′ +̂ a) - (y′ +̂ b) ≡ (x′ +̂ a′) - (y′ +̂ b′)
+--     q′ = quot (inner-lemma x′ y′ q)
