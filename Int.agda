@@ -2,14 +2,14 @@
 module Int where
 
 open import Data.Nat renaming (_+_ to _+̂_)
-open import Cubical.PathPrelude
+open import Cubical.Core.Prelude
 
 module _ {ℓ} {A : Set ℓ} where
   midPath : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) → (q : a ≡ c) → ∀ i → p₀ i ≡ p₁ i
   midPath {a = a} {c = c} p₀ p₁ q i = begin
-    p₀ i ≡⟨ transp (λ j → p₀ (i ∧ j) ≡ a) refl ⟩
+    p₀ i ≡⟨ transp (λ j → p₀ (i ∧ j) ≡ a) i0 refl ⟩
     a    ≡⟨ q ⟩
-    c    ≡⟨ transp (λ j → c ≡ p₁ (i ∧ j)) refl ⟩
+    c    ≡⟨ transp (λ j → c ≡ p₁ (i ∧ j)) i0 refl ⟩
     p₁ i ∎
 
   midPath₀ : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) (q₀ : a ≡ c) →
@@ -20,33 +20,29 @@ data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
   quot : ∀ {x y x′ y′} → (x +̂ y′) ≡ (x′ +̂ y) → (x - y) ≡ (x′ - y′)
 
+module ℤElim {ℓ} {P : ℤ → Set ℓ}
+  (data* : ∀ x y → P (x - y))
+  (quot* : ∀ {x} {y} {x′} {y′} prf → PathP (λ i → P (quot {x} {y} {x′} {y′} prf i)) (data* x y) (data* x′ y′)) where
+
+  ℤ-elim : ∀ x → P x
+  ℤ-elim (x - y) = data* x y
+  ℤ-elim (quot p i) = quot* p i
+
+open ℤElim public
+
 _+1 : ℤ → ℤ
 (x - y) +1 = suc x - y
 quot {x} {y} prf i +1 = quot {suc x} {y} (cong suc prf) i
-
--- module ℤElim {ℓ} {P : ℤ → Set ℓ}
---   (data* : ∀ x y → P (x - y))
---   (quot* : ∀ {x} {y} {x′} {y′} prf → PathP (λ i → P (quot {x} {y} {x′} {y′} prf i)) (data* x y) (data* x′ y′)) where
-
---   ℤ-elim : ∀ x → P x
---   ℤ-elim (x - y) = data* x y
---   ℤ-elim (quot p i) = quot* p i
-
--- open ℤElim public
-
--- module UnaryElim where
---   _+1 : ℤ → ℤ
---   _+1 = ℤ-elim (λ x y → suc x - y) (λ {x} {y} prf → quot {suc x} {y} (cong suc prf))
-
-import Data.Nat.Properties
-open Data.Nat.Properties.SemiringSolver
-  using (prove; solve; _:=_; con; var; _:+_; _:*_; :-_; _:-_)
 
 open import Relation.Binary.PropositionalEquality renaming (refl to prefl; _≡_ to _=̂_) using ()
 fromPropEq : ∀ {ℓ A} {x y : A} → _=̂_ {ℓ} {A} x y → x ≡ y
 fromPropEq prefl = refl
 
 open import Function using (_⟨_⟩_; _$_)
+
+import Data.Nat.Properties
+open Data.Nat.Properties.SemiringSolver
+  using (prove; solve; _:=_; con; var; _:+_; _:*_; :-_; _:-_)
 
 reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)
 reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) prefl x y a b
