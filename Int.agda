@@ -4,25 +4,25 @@ module Int where
 open import Data.Nat renaming (_+_ to _+̂_)
 open import Cubical.PathPrelude
 
-module PathPrelude′ {ℓ} {A : Set ℓ} where
-  -- https://stackoverflow.com/a/53155385/477476
-  midPath : ∀ {ℓ} {A : Set ℓ} (i : I) (a : A)
-    b (p₀ : a ≡ b)
-    c (q₀ : a ≡ c)
-    d (p₁ : c ≡ d)
-    → p₀ i ≡ p₁ i
-  midPath i a = pathJ _ (pathJ _ (pathJ _ refl))
+module _ {ℓ} {A : Set ℓ} where
+  midPath : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) → (q : a ≡ c) → ∀ i → p₀ i ≡ p₁ i
+  midPath {a = a} {c = c} p₀ p₁ q i = begin
+    p₀ i ≡⟨ transp (λ j → p₀ (i ∧ j) ≡ a) refl ⟩
+    a    ≡⟨ q ⟩
+    c    ≡⟨ transp (λ j → c ≡ p₁ (i ∧ j)) refl ⟩
+    p₁ i ∎
 
-open PathPrelude′
+  midPath₀ : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) (q₀ : a ≡ c) →
+    midPath p₀ p₁ q₀ i0 ≡ q₀
+  midPath₀ p₀ p₁ q₀ = {!!}
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
   quot : ∀ {x y x′ y′} → (x +̂ y′) ≡ (x′ +̂ y) → (x - y) ≡ (x′ - y′)
 
--- module UnaryPatMatch where
---   _+1 : ℤ → ℤ
---   (x - y) +1 = suc x - y
---   quot {x} {y} prf i +1 = quot {suc x} {y} (cong suc prf) i
+_+1 : ℤ → ℤ
+(x - y) +1 = suc x - y
+quot {x} {y} prf i +1 = quot {suc x} {y} (cong suc prf) i
 
 -- module ℤElim {ℓ} {P : ℤ → Set ℓ}
 --   (data* : ∀ x y → P (x - y))
@@ -48,11 +48,6 @@ fromPropEq prefl = refl
 
 open import Function using (_⟨_⟩_; _$_)
 
--- data NF : ℤ → Set where
---   zero : NF (0 - 0)
---   posSuc : ∀ x → NF (suc x - 0)
---   negSuc : ∀ y → NF (0 - suc y)
-
 reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)
 reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) prefl x y a b
 
@@ -74,18 +69,18 @@ _+_ : ℤ → ℤ → ℤ
 (x - y) + (a - b) = (x +̂ a) - (y +̂ b)
 (x - y) + quot {a} {b} {a′} {b′} eq₂ j = quot {x +̂ a} {y +̂ b} {x +̂ a′} {y +̂ b′} (inner-lemma x y eq₂) j
 quot {x} {y} {x′} {y′} eq₁ i + (a - b) = quot {x +̂ a} {y +̂ b} {x′ +̂ a} {y′ +̂ b} (outer-lemma x y eq₁) i
-quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = Xᵢ+Aᵢⱼ
+quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = {!Xᵢ+Aⱼ!}
   where
     {-
-                     p
-             X  -------------> X′
+                     p   Xᵢ
+             X  ---------+---> X′
 
                      p₀  i
        A     X+A --------\---> X′+A
        |     |           |
       q|  q₀ |           | qᵢ
        |     |           |
-       |    j+          [+]  <--- This is where we want to get to!
+    Aⱼ +    j+          [+]  <--- This is where we want to get to!
        |     |           |
        V     V       p₁  |
        A′    X+A′ -------/---> X′+A′
@@ -113,6 +108,18 @@ quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = Xᵢ+A
     q₀ = quot (inner-lemma x y eq₂)
 
     qᵢ : ∀ i → p₀ i ≡ p₁ i
-    qᵢ i = midPath {A = ℤ} i _ _ p₀ _ q₀ _ p₁
+    qᵢ i = midPath p₀ p₁ q₀ i
 
-    Xᵢ+Aᵢⱼ = qᵢ i j
+    -- top : ∀ i → qᵢ i i0 ≡ p i + q i0
+    -- top i = refl
+
+    -- bottom : ∀ i → qᵢ i i1 ≡ p i + q i1
+    -- bottom i = refl
+
+    left : ∀ j → qᵢ i0 j ≡ p i0 + q j
+    left j = {!!}
+
+    -- right : ∀ j → qᵢ i1 j ≡ p i1 + q j
+    -- right j = refl
+
+    Xᵢ+Aⱼ = qᵢ i j
