@@ -4,17 +4,37 @@ module Int where
 open import Data.Nat renaming (_+_ to _+̂_)
 open import Cubical.Core.Prelude
 
-module _ {ℓ} {A : Set ℓ} where
-  midPath : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) → (q : a ≡ c) → ∀ i → p₀ i ≡ p₁ i
-  midPath {a = a} {c = c} p₀ p₁ q i = begin
-    p₀ i ≡⟨ transp (λ j → p₀ (i ∧ j) ≡ a) i0 refl ⟩
-    a    ≡⟨ q ⟩
-    c    ≡⟨ transp (λ j → c ≡ p₁ (i ∧ j)) i0 refl ⟩
-    p₁ i ∎
+module _ {ℓ} {A : Set ℓ} {a b c d : A} where
+  lid : ∀ (p₀ : a ≡ b) (p₁ : c ≡ d) (q : a ≡ c) → b ≡ d
+  lid p₀ p₁ q i = comp (λ _ → A)
+    (λ{ j (i = i0) → p₀ j
+      ; j (i = i1) → p₁ j
+      })
+    (inc (q i))
 
-  midPath₀ : ∀ {a b c d : A} (p₀ : a ≡ b) (p₁ : c ≡ d) (q₀ : a ≡ c) →
-    midPath p₀ p₁ q₀ i0 ≡ q₀
-  midPath₀ p₀ p₁ q₀ = {!!}
+  {-
+         p₀
+    a -----.---> b
+    |      .
+  q |      .
+    V      .
+    c -----V---> d
+         p₁
+  -}
+
+  slidingLid : ∀ (p₀ : a ≡ b) (p₁ : c ≡ d) (q : a ≡ c) → ∀ i → p₀ i ≡ p₁ i
+  slidingLid p₀ p₁ q i j = comp (λ _ → A)
+    (λ{ k (i = i0) → q j
+      ; k (j = i0) → p₀ (i ∧ k)
+      ; k (j = i1) → p₁ (i ∧ k)
+      })
+    (inc (q j))
+
+  slidingLid₀ : ∀ p₀ p₁ q → slidingLid p₀ p₁ q i0 ≡ q
+  slidingLid₀ p₀ p₁ q = refl
+
+  slidingLid₁ : ∀ p₀ p₁ q → slidingLid p₀ p₁ q i1 ≡ lid p₀ p₁ q
+  slidingLid₁ p₀ p₁ q = refl
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
@@ -104,18 +124,21 @@ quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = {!Xᵢ
     q₀ = quot (inner-lemma x y eq₂)
 
     qᵢ : ∀ i → p₀ i ≡ p₁ i
-    qᵢ i = midPath p₀ p₁ q₀ i
+    qᵢ = slidingLid p₀ p₁ q₀
 
-    -- top : ∀ i → qᵢ i i0 ≡ p i + q i0
-    -- top i = refl
+    q₁ : X′ + A ≡ X′ + A′
+    q₁ = quot (inner-lemma x′ y′ eq₂)
 
-    -- bottom : ∀ i → qᵢ i i1 ≡ p i + q i1
-    -- bottom i = refl
+    top : ∀ i → qᵢ i i0 ≡ p i + q i0
+    top i = refl
+
+    bottom : ∀ i → qᵢ i i1 ≡ p i + q i1
+    bottom i = refl
 
     left : ∀ j → qᵢ i0 j ≡ p i0 + q j
-    left j = {!!}
+    left j = refl
 
-    -- right : ∀ j → qᵢ i1 j ≡ p i1 + q j
-    -- right j = refl
+    right : ∀ j → qᵢ i1 j ≡ p i1 + q j
+    right j = {!!}
 
     Xᵢ+Aⱼ = qᵢ i j
