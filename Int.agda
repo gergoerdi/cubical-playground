@@ -5,13 +5,6 @@ open import Data.Nat renaming (_+_ to _+̂_)
 open import Cubical.Core.Prelude
 
 module _ {ℓ} {A : Set ℓ} {a b c d : A} where
-  lid : ∀ (p₀ : a ≡ b) (p₁ : c ≡ d) (q : a ≡ c) → b ≡ d
-  lid p₀ p₁ q i = comp (λ _ → A)
-    (λ{ j (i = i0) → p₀ j
-      ; j (i = i1) → p₁ j
-      })
-    (inc (q i))
-
   {-
          p₀
     a -----.---> b
@@ -32,9 +25,6 @@ module _ {ℓ} {A : Set ℓ} {a b c d : A} where
 
   slidingLid₀ : ∀ p₀ p₁ q → slidingLid p₀ p₁ q i0 ≡ q
   slidingLid₀ p₀ p₁ q = refl
-
-  slidingLid₁ : ∀ p₀ p₁ q → slidingLid p₀ p₁ q i1 ≡ lid p₀ p₁ q
-  slidingLid₁ p₀ p₁ q = refl
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
@@ -58,7 +48,7 @@ open import Relation.Binary.PropositionalEquality renaming (refl to prefl; _≡_
 fromPropEq : ∀ {ℓ A} {x y : A} → _=̂_ {ℓ} {A} x y → x ≡ y
 fromPropEq prefl = refl
 
-open import Function using (_⟨_⟩_; _$_)
+open import Function using (_$_)
 
 import Data.Nat.Properties
 open Data.Nat.Properties.SemiringSolver
@@ -67,25 +57,28 @@ open Data.Nat.Properties.SemiringSolver
 reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)
 reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) prefl x y a b
 
-inner-lemma : ∀ x y {a b a′ b′} → a +̂ b′ ≡ a′ +̂ b → (x +̂ a) +̂ (y +̂ b′) ≡ (x +̂ a′) +̂ (y +̂ b)
-inner-lemma x y {a} {b} {a′} {b′} prf = begin
+inner-lemma : ∀ x y a b a′ b′ → a +̂ b′ ≡ a′ +̂ b → (x +̂ a) +̂ (y +̂ b′) ≡ (x +̂ a′) +̂ (y +̂ b)
+inner-lemma x y a b a′ b′ prf = begin
   (x +̂ a) +̂ (y +̂ b′)   ≡⟨ reorder x y a b′ ⟩
   (x +̂ y) +̂ (a +̂ b′)   ≡⟨ cong (x +̂ y +̂_) prf ⟩
   (x +̂ y) +̂ (a′ +̂ b)   ≡⟨ sym (reorder x y a′ b) ⟩
   (x +̂ a′) +̂ (y +̂ b)   ∎
 
-outer-lemma : ∀ {a b} x y {x′ y′} → x +̂ y′ ≡ x′ +̂ y → (x +̂ a) +̂ (y′ +̂ b) ≡ (x′ +̂ a) +̂ (y +̂ b)
-outer-lemma {a} {b} x y {x′} {y′} prf = begin
+outer-lemma : ∀ x y x′ y′ a b  → x +̂ y′ ≡ x′ +̂ y → (x +̂ a) +̂ (y′ +̂ b) ≡ (x′ +̂ a) +̂ (y +̂ b)
+outer-lemma x y x′ y′ a b prf = begin
   (x +̂ a) +̂ (y′ +̂ b)   ≡⟨ reorder x y′ a b ⟩
   (x +̂ y′) +̂ (a +̂ b)   ≡⟨ cong (_+̂ (a +̂ b)) prf ⟩
   (x′ +̂ y) +̂ (a +̂ b)   ≡⟨ sym (reorder x′ y a b) ⟩
   (x′ +̂ a) +̂ (y +̂ b)   ∎
 
+-- p+p : (ℕ × ℕ) → (ℕ × ℕ) → (ℕ × ℕ)
+-- p+p (x , y) (a , b) = x +̂ a , y +̂ b
+
 _+_ : ℤ → ℤ → ℤ
 (x - y) + (a - b) = (x +̂ a) - (y +̂ b)
-(x - y) + quot {a} {b} {a′} {b′} eq₂ j = quot {x +̂ a} {y +̂ b} {x +̂ a′} {y +̂ b′} (inner-lemma x y eq₂) j
-quot {x} {y} {x′} {y′} eq₁ i + (a - b) = quot {x +̂ a} {y +̂ b} {x′ +̂ a} {y′ +̂ b} (outer-lemma x y eq₁) i
-quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = {!Xᵢ+Aⱼ!}
+(x - y) + quot {a} {b} {a′} {b′} eq₂ j = quot {x +̂ a} {y +̂ b} {x +̂ a′} {y +̂ b′} (inner-lemma x y a b a′ b′ eq₂) j
+quot {x} {y} {x′} {y′} eq₁ i + (a - b) = quot {x +̂ a} {y +̂ b} {x′ +̂ a} {y′ +̂ b} (outer-lemma x y x′ y′ a b eq₁) i
+quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = Xᵢ+Aⱼ
   where
     {-
                      p   Xᵢ
@@ -114,20 +107,25 @@ quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = {!Xᵢ
     q : A ≡ A′
     q = quot eq₂
 
-    p₀ : X + A ≡ X′ + A
-    p₀ = quot (outer-lemma x y eq₁)
+    X+A = (x +̂ a) - (y +̂ b)
+    X′+A = (x′ +̂ a) - (y′ +̂ b)
+    X+A′ = (x +̂ a′) - (y +̂ b′)
+    X′+A′ = (x′ +̂ a′) - (y′ +̂ b′)
 
-    p₁ : X + A′ ≡ X′ + A′
-    p₁ = quot (outer-lemma x y eq₁)
+    p₀ : X+A ≡ X′+A
+    p₀ = quot (outer-lemma x y x′ y′ a b eq₁)
 
-    q₀ : X + A ≡ X + A′
-    q₀ = quot (inner-lemma x y eq₂)
+    p₁ : X+A′ ≡ X′+A′
+    p₁ = quot (outer-lemma x y x′ y′ a′ b′ eq₁)
+
+    q₀ : X+A ≡ X+A′
+    q₀ = quot (inner-lemma x y a b a′ b′ eq₂)
+
+    q₁ : X′+A ≡ X′+A′
+    q₁ = quot (inner-lemma x′ y′ a b a′ b′ eq₂)
 
     qᵢ : ∀ i → p₀ i ≡ p₁ i
     qᵢ = slidingLid p₀ p₁ q₀
-
-    q₁ : X′ + A ≡ X′ + A′
-    q₁ = quot (inner-lemma x′ y′ eq₂)
 
     top : ∀ i → qᵢ i i0 ≡ p i + q i0
     top i = refl
@@ -135,10 +133,22 @@ quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = {!Xᵢ
     bottom : ∀ i → qᵢ i i1 ≡ p i + q i1
     bottom i = refl
 
-    left : ∀ j → qᵢ i0 j ≡ p i0 + q j
-    left j = refl
+    left : qᵢ i0 ≡ q₀
+    left = refl
 
-    right : ∀ j → qᵢ i1 j ≡ p i1 + q j
-    right j = {!!}
+    right : qᵢ i1 ≡ q₁
+    right i = comp
+      (λ j → p j + A ≡ p j + A′)
+      (λ { j (i = i0) → qᵢ j
+         ; j (i = i1) → cong (λ ξ → quot {x} {y} {x′} {y′} eq₁ j + ξ) q
+         })
+      (inc (left i))
 
-    Xᵢ+Aⱼ = qᵢ i j
+    surface : PathP (λ i → p₀ i ≡ p₁ i) q₀ q₁
+    surface i = comp (λ j → p₀ i ≡ p₁ i)
+      (λ { j (i = i0) → q₀
+         ; j (i = i1) → right j
+         })
+      (inc (qᵢ i))
+
+    Xᵢ+Aⱼ = surface i j
