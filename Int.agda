@@ -3,46 +3,39 @@ module Int where
 
 open import Data.Nat renaming (_+_ to _+̂_)
 open import Cubical.Core.Prelude
+open import Utils
 
-module _ {ℓ} {A : Set ℓ} {a b c d : A} where
-  {-
-         p₀
-    a -----.---> b
-    |      .
-  q |      .
-    V      .
-    c -----V---> d
-         p₁
-  -}
-
-  slidingLid : ∀ (p₀ : a ≡ b) (p₁ : c ≡ d) (q : a ≡ c) → ∀ i → p₀ i ≡ p₁ i
-  slidingLid p₀ p₁ q i j = comp (λ _ → A)
-    (λ{ k (i = i0) → q j
-      ; k (j = i0) → p₀ (i ∧ k)
-      ; k (j = i1) → p₁ (i ∧ k)
-      })
-    (inc (q j))
-
-  slidingLid₀ : ∀ p₀ p₁ q → slidingLid p₀ p₁ q i0 ≡ q
-  slidingLid₀ p₀ p₁ q = refl
+Same : ℕ → ℕ → ℕ → ℕ → Set
+Same x y x′ y′ = x +̂ y′ ≡ x′ +̂ y
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
-  quot : ∀ {x y x′ y′} → (x +̂ y′) ≡ (x′ +̂ y) → (x - y) ≡ (x′ - y′)
+  quot : ∀ {x y x′ y′} → Same x y x′ y′ → (x - y) ≡ (x′ - y′)
+  trunc : {x y : ℤ} → (p q : x ≡ y) → p ≡ q
 
 module ℤElim {ℓ} {P : ℤ → Set ℓ}
-  (data* : ∀ x y → P (x - y))
-  (quot* : ∀ {x} {y} {x′} {y′} prf → PathP (λ i → P (quot {x} {y} {x′} {y′} prf i)) (data* x y) (data* x′ y′)) where
+  (point* : ∀ x y → P (x - y))
+  (quot* : ∀ {x y x′ y′} same → PathP (λ i → P (quot {x} {y} {x′} {y′} same i)) (point* x y) (point* x′ y′))
+  (trunc* : ∀ {x y} {p q : x ≡ y} → ∀ {fx : P x} {fy : P y} (eq₁ : PathP (λ i → P (p i)) fx fy) (eq₂ : PathP (λ i → P (q i)) fx fy) → PathP (λ i → PathP (λ j → P (trunc p q i j)) fx fy) eq₁ eq₂)
+  where
 
   ℤ-elim : ∀ x → P x
-  ℤ-elim (x - y) = data* x y
+  ℤ-elim (x - y) = point* x y
   ℤ-elim (quot p i) = quot* p i
+  ℤ-elim (trunc p q i j) = trunc* (cong ℤ-elim p) (cong ℤ-elim q) i j
 
 open ℤElim public
 
 _+1 : ℤ → ℤ
-(x - y) +1 = suc x - y
-quot {x} {y} prf i +1 = quot {suc x} {y} (cong suc prf) i
+(x - y)            +1 = suc x - y
+quot {x} {y} eq i  +1 = quot {suc x} {y} (cong suc eq) i
+trunc p q i j      +1 = trunc (cong _+1 p) (cong _+1 q) i j
+
+_+1′ : ℤ → ℤ
+_+1′ = ℤ-elim
+  (λ x y → suc x - y)
+  (λ eq → quot (cong suc eq))
+  trunc
 
 open import Relation.Binary.PropositionalEquality renaming (refl to prefl; _≡_ to _=̂_) using ()
 fromPropEq : ∀ {ℓ A} {x y : A} → _=̂_ {ℓ} {A} x y → x ≡ y
@@ -57,98 +50,92 @@ open Data.Nat.Properties.SemiringSolver
 reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)
 reorder x y a b = fromPropEq $ solve 4 (λ x y a b → (x :+ a) :+ (y :+ b) := (x :+ y) :+ (a :+ b)) prefl x y a b
 
-inner-lemma : ∀ x y a b a′ b′ → a +̂ b′ ≡ a′ +̂ b → (x +̂ a) +̂ (y +̂ b′) ≡ (x +̂ a′) +̂ (y +̂ b)
-inner-lemma x y a b a′ b′ prf = begin
+inner-lemma : ∀ x y {a b a′ b′} → a +̂ b′ ≡ a′ +̂ b → (x +̂ a) +̂ (y +̂ b′) ≡ (x +̂ a′) +̂ (y +̂ b)
+inner-lemma x y {a} {b} {a′} {b′} prf = begin
   (x +̂ a) +̂ (y +̂ b′)   ≡⟨ reorder x y a b′ ⟩
   (x +̂ y) +̂ (a +̂ b′)   ≡⟨ cong (x +̂ y +̂_) prf ⟩
   (x +̂ y) +̂ (a′ +̂ b)   ≡⟨ sym (reorder x y a′ b) ⟩
   (x +̂ a′) +̂ (y +̂ b)   ∎
 
-outer-lemma : ∀ x y x′ y′ a b  → x +̂ y′ ≡ x′ +̂ y → (x +̂ a) +̂ (y′ +̂ b) ≡ (x′ +̂ a) +̂ (y +̂ b)
-outer-lemma x y x′ y′ a b prf = begin
+outer-lemma : ∀ x y {x′} {y′} {a b}  → x +̂ y′ ≡ x′ +̂ y → (x +̂ a) +̂ (y′ +̂ b) ≡ (x′ +̂ a) +̂ (y +̂ b)
+outer-lemma x y {x′} {y′} {a} {b} prf = begin
   (x +̂ a) +̂ (y′ +̂ b)   ≡⟨ reorder x y′ a b ⟩
   (x +̂ y′) +̂ (a +̂ b)   ≡⟨ cong (_+̂ (a +̂ b)) prf ⟩
   (x′ +̂ y) +̂ (a +̂ b)   ≡⟨ sym (reorder x′ y a b) ⟩
   (x′ +̂ a) +̂ (y +̂ b)   ∎
 
--- p+p : (ℕ × ℕ) → (ℕ × ℕ) → (ℕ × ℕ)
--- p+p (x , y) (a , b) = x +̂ a , y +̂ b
-
 _+_ : ℤ → ℤ → ℤ
-(x - y) + (a - b) = (x +̂ a) - (y +̂ b)
-(x - y) + quot {a} {b} {a′} {b′} eq₂ j = quot {x +̂ a} {y +̂ b} {x +̂ a′} {y +̂ b′} (inner-lemma x y a b a′ b′ eq₂) j
-quot {x} {y} {x′} {y′} eq₁ i + (a - b) = quot {x +̂ a} {y +̂ b} {x′ +̂ a} {y′ +̂ b} (outer-lemma x y x′ y′ a b eq₁) i
-quot {x} {y} {x′} {y′} eq₁ i + quot {a} {b} {a′} {b′} eq₂ j = Xᵢ+Aⱼ
+_+_ = ℤ-elim
+  (λ x y → ℤ-elim
+    (λ a b → (x +̂ a) - (y +̂ b))
+    (λ eq₂ → quot (inner-lemma x y eq₂))
+    trunc)
+  (λ {x} {y} {x′} {y′} eq₁ i → ℤ-elim
+    (λ a b → quot (outer-lemma x y eq₁) i)
+    (λ {a} {b} {a′} {b′} eq₂ j → lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j )
+    trunc)
+  (λ {x} {y} {p} {q} {x,} {y,} eq₁ eq₂ i →
+    funExt λ a → λ j → trunc {x, a} {y, a} (cong (_$ a) eq₁) (cong (_$ a) eq₂) i j)
   where
-    {-
-                     p   Xᵢ
-             X  ---------+---> X′
+    lemma : ∀ {x y x′ y′ a b a′ b′} → Same x y x′ y′ → Same a b a′ b′ → I → I → ℤ
+    lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j = surface i j
+      where
+        {-
+                         p   Xᵢ
+                 X  ---------+---> X′
 
-                     p₀  i
-       A     X+A --------\---> X′+A
-       |     |           |
-      q|  q₀ |           | qᵢ
-       |     |           |
-    Aⱼ +    j+          [+]  <--- This is where we want to get to!
-       |     |           |
-       V     V       p₁  |
-       A′    X+A′ -------/---> X′+A′
-                         i
-    -}
+                         p₀  i
+           A     X+A --------\---> X′+A
+           |     |           |
+          q|  q₀ |           | qᵢ
+           |     |           |
+        Aⱼ +    j+          [+]  <--- This is where we want to get to!
+           |     |           |
+           V     V       p₁  |
+           A′    X+A′ -------/---> X′+A′
+                             i
+        -}
 
-    X = (x - y)
-    X′ = (x′ - y′)
-    A = (a - b)
-    A′ = (a′ - b′)
+        X = x - y
+        X′ = x′ - y′
+        A = a - b
+        A′ = a′ - b′
 
-    p : X ≡ X′
-    p = quot eq₁
+        X+A   = (x +̂ a) - (y +̂ b)
+        X′+A  = (x′ +̂ a) - (y′ +̂ b)
+        X+A′  = (x +̂ a′) - (y +̂ b′)
+        X′+A′ = (x′ +̂ a′) - (y′ +̂ b′)
 
-    q : A ≡ A′
-    q = quot eq₂
+        p : X ≡ X′
+        p = quot eq₁
 
-    X+A = (x +̂ a) - (y +̂ b)
-    X′+A = (x′ +̂ a) - (y′ +̂ b)
-    X+A′ = (x +̂ a′) - (y +̂ b′)
-    X′+A′ = (x′ +̂ a′) - (y′ +̂ b′)
+        q : A ≡ A′
+        q = quot eq₂
 
-    p₀ : X+A ≡ X′+A
-    p₀ = quot (outer-lemma x y x′ y′ a b eq₁)
+        p₀ : X+A ≡ X′+A
+        p₀ = quot (outer-lemma x y eq₁)
 
-    p₁ : X+A′ ≡ X′+A′
-    p₁ = quot (outer-lemma x y x′ y′ a′ b′ eq₁)
+        p₁ : X+A′ ≡ X′+A′
+        p₁ = quot (outer-lemma x y eq₁)
 
-    q₀ : X+A ≡ X+A′
-    q₀ = quot (inner-lemma x y a b a′ b′ eq₂)
+        q₀ : X+A ≡ X+A′
+        q₀ = quot (inner-lemma x y eq₂)
 
-    q₁ : X′+A ≡ X′+A′
-    q₁ = quot (inner-lemma x′ y′ a b a′ b′ eq₂)
+        q₁ : X′+A ≡ X′+A′
+        q₁ = quot (inner-lemma x′ y′ eq₂)
 
-    qᵢ : ∀ i → p₀ i ≡ p₁ i
-    qᵢ = slidingLid p₀ p₁ q₀
+        qᵢ : ∀ i → p₀ i ≡ p₁ i
+        qᵢ = slidingLid p₀ p₁ q₀
 
-    top : ∀ i → qᵢ i i0 ≡ p i + q i0
-    top i = refl
+        left : qᵢ i0 ≡ q₀
+        left = refl
 
-    bottom : ∀ i → qᵢ i i1 ≡ p i + q i1
-    bottom i = refl
+        right : qᵢ i1 ≡ q₁
+        right = trunc (qᵢ i1) q₁
 
-    left : qᵢ i0 ≡ q₀
-    left = refl
-
-    right : qᵢ i1 ≡ q₁
-    right i = comp
-      (λ j → p j + A ≡ p j + A′)
-      (λ { j (i = i0) → qᵢ j
-         ; j (i = i1) → cong (λ ξ → quot {x} {y} {x′} {y′} eq₁ j + ξ) q
-         })
-      (inc (left i))
-
-    surface : PathP (λ i → p₀ i ≡ p₁ i) q₀ q₁
-    surface i = comp (λ j → p₀ i ≡ p₁ i)
-      (λ { j (i = i0) → q₀
-         ; j (i = i1) → right j
-         })
-      (inc (qᵢ i))
-
-    Xᵢ+Aⱼ = surface i j
+        surface : PathP (λ i → p₀ i ≡ p₁ i) q₀ q₁
+        surface i = comp (λ j → p₀ i ≡ p₁ i)
+          (λ { j (i = i0) → left j
+             ; j (i = i1) → right j
+             })
+          (inc (qᵢ i))
