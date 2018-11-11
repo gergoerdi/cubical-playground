@@ -74,8 +74,8 @@ _+_ = ℤ-elim
     (λ a b → quot (outer-lemma x y eq₁) i)
     (λ {a} {b} {a′} {b′} eq₂ j → lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j )
     trunc)
-  (λ {x} {y} {p} {q} {x,} {y,} eq₁ eq₂ i →
-    funExt λ a → λ j → trunc {x, a} {y, a} (cong (_$ a) eq₁) (cong (_$ a) eq₂) i j)
+  (λ {_} {_} {_} {_} {x+} {y+} eq₁ eq₂ i →
+    funExt λ a → λ j → trunc {x+ a} {y+ a} (ap eq₁ a) (ap eq₂ a) i j)
   where
     lemma : ∀ {x y x′ y′ a b a′ b′} → Same x y x′ y′ → Same a b a′ b′ → I → I → ℤ
     lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j = surface i j
