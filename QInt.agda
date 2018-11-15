@@ -1,9 +1,8 @@
 {-# OPTIONS --cubical #-}
 module _ where
 
-open import Cubical.Core.Prelude
+open import Cubical.Core.Prelude renaming (_+_ to _+̂_)
 open import Quotient
-open import Data.Nat renaming (_+_ to _+̂_)
 import Data.Nat.Properties; open Data.Nat.Properties.SemiringSolver
 open import Function using (_$_)
 open import Utils; open Utils.PropEq

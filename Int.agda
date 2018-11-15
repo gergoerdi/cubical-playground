@@ -1,8 +1,7 @@
 {-# OPTIONS --cubical #-}
 module Int where
 
-open import Data.Nat renaming (_+_ to _+̂_)
-open import Cubical.Core.Prelude
+open import Cubical.Core.Prelude renaming (_+_ to _+̂_)
 open import Utils
 
 Same : ℕ → ℕ → ℕ → ℕ → Set
@@ -75,7 +74,7 @@ _+_ = ℤ-elim
     (λ {a} {b} {a′} {b′} eq₂ j → lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j )
     trunc)
   (λ {_} {_} {_} {_} {x+} {y+} eq₁ eq₂ i →
-    funExt λ a → λ j → trunc {x+ a} {y+ a} (ap eq₁ a) (ap eq₂ a) i j)
+    funExt _ λ a → λ j → trunc {x+ a} {y+ a} (ap eq₁ a) (ap eq₂ a) i j)
   where
     lemma : ∀ {x y x′ y′ a b a′ b′} → Same x y x′ y′ → Same a b a′ b′ → I → I → ℤ
     lemma {x} {y} {x′} {y′} {a} {b} {a′} {b′} eq₁ eq₂ i j = surface i j

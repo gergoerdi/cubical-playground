@@ -44,7 +44,7 @@ module Quot²
         (λ y → quot (eq₁ , ≈-refl _) i)
         (λ {y} {y′} eq₂ j → lemma eq₁ eq₂ i j)
         trunc)
-      (λ {x} {y} {p} {q} {x,} {y,} eq₁ eq₂ i → funExt λ a → λ j → trunc {x = x, a} {y = y, a} (ap eq₁ a) (ap eq₂ a) i j)
+      (λ {x} {y} {p} {q} {x,} {y,} eq₁ eq₂ i → funExt _ λ a → λ j → trunc {x = x, a} {y = y, a} (ap eq₁ a) (ap eq₂ a) i j)
       where
         open import Utils
 
