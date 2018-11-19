@@ -9,7 +9,7 @@ Same x y x′ y′ = x +̂ y′ ≡ x′ +̂ y
 
 data ℤ : Set where
   _-_ : (x : ℕ) → (y : ℕ) → ℤ
-  quot : ∀ {x y x′ y′} → Same x y x′ y′ → (x - y) ≡ (x′ - y′)
+  quot : ∀ {x y x′ y′} → (eq : Same x y x′ y′) → (x - y) ≡ (x′ - y′)
   trunc : {x y : ℤ} → (p q : x ≡ y) → p ≡ q
 
 module ℤElim {ℓ} {P : ℤ → Set ℓ}
