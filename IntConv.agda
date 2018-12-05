@@ -25,6 +25,9 @@ compPath-refl_ {A = A} {x = x} {y = y} p i j = hcomp
      })
   x
 
+endpoint : ∀ x y {x′ y′} (eq : Same x y x′ y′) i  → x - y ≡ quot {x} {y} eq i
+endpoint x y eq i j = quot {x} {y} eq (i ∧ j)
+
 sucℤ : ℤ → ℤ
 sucℤ = ℤ-elim
   (λ x y → suc x - y)
@@ -46,26 +49,47 @@ predℤ = ℤ-elim
 
 predℤ-sucℤ-lemma : ∀ x y {x′ y′} → Same x y x′ y′ → Same (suc x) (suc y) x′ y′
 predℤ-sucℤ-lemma x y {x′} {y′} eq = begin
-  suc x +̂ y′ ≡⟨ cong suc eq ⟩
-  suc (x′ +̂ y) ≡⟨ {!!} ⟩
-  x′ +̂ suc y ∎
+  suc x +̂ y′   ≡⟨ cong suc eq ⟩
+  suc (x′ +̂ y) ≡⟨ sym (plus-suc x′) ⟩
+  x′ +̂ suc y   ∎
 
 predℤ-sucℤ : ∀ x → predℤ (sucℤ x) ≡ x
 predℤ-sucℤ = ℤ-elim
-  (λ x y → quot {!!})
-  (λ {x} {y} {x′} {y′} eq → {!!})
+  (λ x y → quot (predℤ-sucℤ-lemma x y refl))
+  (λ {x} {y} {x′} {y′} eq → foo x y x′ y′ eq)
   {!!}
   where
-    -- prf : ∀ x y x′ y′ (eq : Same x y x′ y′) →
-    --   quot {suc x} {suc y} {suc x′} {suc y′} (compPath (compPath (plus-suc x) ?) (sym (plus-suc x′))) ≡
-    --   quot {x} {y} {x′} {y′} eq
-    -- prf = ?
+    lemma : ∀ x y x′ y′ (eq : Same x y x′ y′) i →
+      predℤ (sucℤ (quot {x} {y} eq i)) ≡ quot {x} {y} eq i
+    lemma x y x′ y′ eq i = begin
+      predℤ (sucℤ (quot {x} {y} eq i)) ≡⟨ cong (predℤ ∘ sucℤ) (sym (endpoint x y eq i)) ⟩
+      predℤ (sucℤ (x - y))             ≡⟨⟩
+      predℤ (suc x - y)                ≡⟨⟩
+      suc x - suc y                    ≡⟨ quot (sym (plus-suc x)) ⟩
+      x - y                            ≡⟨ endpoint x y eq i ⟩
+      quot eq i                        ∎
+
+    foo : ∀ x y x′ y′ (eq : Same x y x′ y′) →
+      PathP (λ i → predℤ (sucℤ (quot {x} {y} eq i)) ≡ quot {x} {y} eq i)
+        (quot (predℤ-sucℤ-lemma x y refl))
+        (quot (predℤ-sucℤ-lemma x′ y′ refl))
+    foo x y x′ y′ eq = {!!}
 
 sucℤ-predℤ : ∀ x → sucℤ (predℤ x) ≡ x
 sucℤ-predℤ = ℤ-elim
   (λ x y → quot (sym (plus-suc x)))
-  (λ eq → {!!})
+  (λ eq i → {!!})
   {!!}
+  where
+    lemma : ∀ x y x′ y′ (eq : Same x y x′ y′) i →
+      sucℤ (predℤ (quot {x} {y} eq i)) ≡ quot {x} {y} eq i
+    lemma x y x′ y′ eq i = begin
+      sucℤ (predℤ (quot {x} {y} eq i)) ≡⟨ cong (sucℤ ∘ predℤ) (sym (endpoint x y eq i)) ⟩
+      sucℤ (predℤ (x - y))             ≡⟨⟩
+      sucℤ (x - suc y)                 ≡⟨⟩
+      suc x - suc y                    ≡⟨ quot (sym (plus-suc x)) ⟩
+      x - y                            ≡⟨ endpoint x y eq i ⟩
+      quot eq i                        ∎
 
 suc-equiv : ℤ ≃ ℤ
 suc-equiv = isoToEquiv sucℤ predℤ sucℤ-predℤ predℤ-sucℤ
