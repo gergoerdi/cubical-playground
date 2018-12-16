@@ -42,8 +42,8 @@ fromPropEq prefl = refl
 
 open import Function using (_$_)
 
-import Data.Nat.Properties
-open Data.Nat.Properties.SemiringSolver
+import Data.Nat.Solver
+open Data.Nat.Solver.+-*-Solver
   using (prove; solve; _:=_; con; var; _:+_; _:*_; :-_; _:-_)
 
 reorder :  ∀ x y a b → (x +̂ a) +̂ (y +̂ b) ≡ (x +̂ y) +̂ (a +̂ b)

@@ -3,7 +3,7 @@ module _ where
 
 open import Cubical.Core.Prelude renaming (_+_ to _+̂_)
 open import Quotient
-import Data.Nat.Properties; open Data.Nat.Properties.SemiringSolver
+import Data.Nat.Solver; open Data.Nat.Solver.+-*-Solver
 open import Function using (_$_)
 open import Utils; open Utils.PropEq
 
